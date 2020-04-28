@@ -161,11 +161,6 @@ class MHACWIFI1Accessory {
             .setCharacteristic(Characteristic.Model, 'Some model')
             .setCharacteristic(Characteristic.SerialNumber, '123-456-789')
 
-        const outdoorTemperatureService = new Service.TemperatureSensor(`[outdoor] ${this.config.name}`)
-
-        outdoorTemperatureService.getCharacteristic(Characteristic.CurrentTemperature)
-            .on('get', callback => { this.getValue('outdoortemperature', callback) })
-
         /*
          * For each of the service characteristics we need to register setters and getter functions
          * 'get' is called when HomeKit wants to retrieve the current state of the characteristic
@@ -201,7 +196,7 @@ class MHACWIFI1Accessory {
             .on('set', (value, callback) => { this.setValue('thresholdtemperature', value, callback) })
 
         /* Return both the main service (this.service) and the informationService */
-        return [informationService, this.service, outdoorTemperatureService]
+        return [informationService, this.service]
     }
 
     /*
