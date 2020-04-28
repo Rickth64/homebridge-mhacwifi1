@@ -22,7 +22,7 @@ SOFTWARE. */
 
 'use strict'
 
-const acwm = require("./acwm-api.js")
+const acwm = require("./acwm-api/acwm-api.js")
 
 let Service, Characteristic
 
