@@ -247,7 +247,7 @@ class IntesisACWM {
 
     // identify: flash the light on de device to identify it
     identify() {
-        return writeCommand('identify', { sessionID: this.session })
+        return this.writeCommand('identify', { sessionID: this.session })
     }
 
     // reboot: reboot the device
