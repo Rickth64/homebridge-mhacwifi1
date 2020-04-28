@@ -166,10 +166,6 @@ class MHACWIFI1Accessory {
          * 'get' is called when HomeKit wants to retrieve the current state of the characteristic
          * 'set' is called when HomeKit wants to update the value of the characteristic
          */
-        this.on('identify', (value, callback) => {
-            this.log(`Somebody wants to identify this thing!`, value)
-            callback(null)
-        })
 
         this.service.getCharacteristic(Characteristic.Active)
             .on('get', callback => { this.getValue('active', callback) })
