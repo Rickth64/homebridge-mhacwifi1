@@ -162,7 +162,8 @@ class MHACWIFI1Accessory {
             .setCharacteristic(Characteristic.SerialNumber, '123-456-789')
 
         const outdoorTemperatureService = new Service.TemperatureSensor(`[outdoor] ${this.config.name}`)
-            .getCharacteristic(Characteristic.CurrentTemperature)
+
+        outdoorTemperatureService.getCharacteristic(Characteristic.CurrentTemperature)
             .on('get', callback => { this.getValue('outdoortemperature', callback) })
 
         /*
