@@ -136,6 +136,11 @@ class MHACWIFI1Accessory {
                 "uid": 36,
                 "mh": this.hkTempToMhTemp,
                 "homekit": this.mhTempToHkTemp
+            },
+            "outdoortemperature": {
+                "uid": 37,
+                "mh": this.hkTempToMhTemp,
+                "homekit": this.mhTempToHkTemp
             }
         }
 
@@ -155,6 +160,10 @@ class MHACWIFI1Accessory {
             .setCharacteristic(Characteristic.Manufacturer, 'Mitsubish Heavy Industries')
             .setCharacteristic(Characteristic.Model, 'Some model')
             .setCharacteristic(Characteristic.SerialNumber, '123-456-789')
+
+        const outdoorTemperatureService = new Service.TemperatureSensor(`[outdoor] ${this.config.name}`)
+            .getCharacteristic(Characteristic.CurrentTemperature)
+            .on('get', callback => { this.getValue('outdoortemperature', callback) })
 
         /*
          * For each of the service characteristics we need to register setters and getter functions
@@ -191,7 +200,7 @@ class MHACWIFI1Accessory {
             .on('set', (value, callback) => { this.setValue('thresholdtemperature', value, callback) })
 
         /* Return both the main service (this.service) and the informationService */
-        return [informationService, this.service]
+        return [informationService, outdoorTemperatureService, this.service]
     }
 
     /*
