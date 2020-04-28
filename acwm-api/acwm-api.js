@@ -246,7 +246,7 @@ class IntesisACWM {
     }
 
     // identify: flash the light on de device to identify it
-    indentify() {
+    identify() {
         return writeCommand('identify', { sessionID: this.session })
     }
 
