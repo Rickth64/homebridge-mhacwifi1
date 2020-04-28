@@ -201,7 +201,7 @@ class MHACWIFI1Accessory {
             .on('set', (value, callback) => { this.setValue('thresholdtemperature', value, callback) })
 
         /* Return both the main service (this.service) and the informationService */
-        return [informationService, outdoorTemperatureService, this.service]
+        return [informationService, this.service, outdoorTemperatureService]
     }
 
     /*
