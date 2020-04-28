@@ -239,3 +239,16 @@ class MHACWIFI1Accessory {
         return mhTemperatureValue;
     }
 }
+
+MHACWIFI1Accessory.prototype.identify = function (callback) {
+    this.log(`Identify requested`)
+    this.airco.identify()
+    .then(result => {
+        this.log(`Identify succeeded`)
+        callback(null)
+    })
+    .catch(error => {
+        this.log(`Identify failed`, error)
+        callback(error)
+    })
+}
