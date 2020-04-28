@@ -1,6 +1,6 @@
 {
     "name": "homebridge-mhacwifi1",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Homebridge plugin for Mitsubishi Heavy Industries AirCon WiFi Controller (MH-AC-WIFI-1)",
     "main": "index.js",
     "scripts": {
@@ -17,6 +17,10 @@
     ],
     "engines": {
       "homebridge": ">=0.4.0"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/Rickth64/homebridge-mhacwifi1.git"
     },
     "author": "Rickth64",
     "license": "MIT"
