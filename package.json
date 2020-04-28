@@ -1,0 +1,23 @@
+{
+    "name": "homebridge-mhacwifi1",
+    "version": "0.1.0",
+    "description": "Homebridge plugin for Mitsubishi Heavy Industries AirCon WiFi Controller (MH-AC-WIFI-1)",
+    "main": "index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+      "homebridge-plugin",
+      "homebridge",
+      "homebridge-mhacwifi1",
+      "intesis",
+      "airconwithme",
+      "mitsubishi",
+      "intesishome"
+    ],
+    "engines": {
+      "homebridge": ">=0.4.0"
+    },
+    "author": "Rickth64",
+    "license": "MIT"
+  }
