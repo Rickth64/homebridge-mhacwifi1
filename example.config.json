@@ -1,0 +1,11 @@
+{
+    "accessories": [
+        {
+            "accessory": "MH-AC-WIFI-1",
+            "name": "Aircon Living Room",
+            "ip": "0.0.0.0",
+            "username": "admin",
+            "password": "admin"
+        }
+    ]
+}
