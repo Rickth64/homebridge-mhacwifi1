@@ -40,7 +40,7 @@ class MHACWIFI1Accessory {
 
         this.dataMap = {
             "active": {
-                "uid": 1, /* power */
+                "uid": 1, /* on,off */
                 "mh": function (homekitActiveValue) {
                     let mhActiveValue;
                     switch (homekitActiveValue) {
@@ -69,7 +69,7 @@ class MHACWIFI1Accessory {
                 }
             },
             "state": {
-                "uid": 2, /* usermode */
+                "uid": 2, /* user mode */
                 "mh": function (homekitStateValue) {
                     let mhStateValue;
                     switch (homekitStateValue) {
@@ -109,7 +109,7 @@ class MHACWIFI1Accessory {
                 }
             },
             "rotationspeed": {
-                "uid": 4, /* fanspeed, values are 0, 1, 2, 3, 4 for both platforms */
+                "uid": 4, /* fan speed, values are 0, 1, 2, 3, 4 for both platforms */
                 "mh": function (homekitRotationSpeedValue) {
                     return homekitRotationSpeedValue;
                 },
@@ -118,27 +118,56 @@ class MHACWIFI1Accessory {
                 }
             },
             "thresholdtemperature": {
-                "uid": 9,
+                "uid": 9, /* user setpoint */
                 "mh": this.hkTempToMhTemp,
                 "homekit": this.mhTempToHkTemp
             },
             "temperature": {
-                "uid": 10,
+                "uid": 10, /* return path temperature */
                 "mh": this.hkTempToMhTemp,
                 "homekit": this.mhTempToHkTemp
             },
+            "lockphysicalcontrols": {
+                "uid": 12, /* remote disable */
+                "mh": function (homekitLockValue) {
+                    let mhLockValue;
+                    switch (homekitLockValue) {
+                        case Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED:
+                            mhLockValue = 1;
+                            break;
+                        case Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED:
+                        default:
+                            mhLockValue = 0;
+                            break;
+                    }
+                    return mhLockValue;
+                },
+                "homekit": function (mhLockValue) {
+                    let homekitLockValue;
+                    switch (mhLockValue) {
+                        case 1:
+                            homekitLockValue = Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED;
+                            break;
+                        case 0:
+                        default:
+                            homekitLockValue = Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED;
+                            break;
+                    }
+                    return homekitLockValue;
+                }
+            },
             "mintemp": {
-                "uid": 35,
+                "uid": 35, /* min temperature setpoint */
                 "mh": this.hkTempToMhTemp,
                 "homekit": this.mhTempToHkTemp
             },
             "maxtemp": {
-                "uid": 36,
+                "uid": 36, /* max temperature setpoint */
                 "mh": this.hkTempToMhTemp,
                 "homekit": this.mhTempToHkTemp
             },
             "outdoortemperature": {
-                "uid": 37,
+                "uid": 37, /* outdoor temperature */
                 "mh": this.hkTempToMhTemp,
                 "homekit": this.mhTempToHkTemp
             }
@@ -196,6 +225,10 @@ class MHACWIFI1Accessory {
             .on('get', callback => { this.getValue('thresholdtemperature', callback) })
             .on('set', (value, callback) => { this.setValue('thresholdtemperature', value, callback) })
 
+        this.service.getCharacteristic(Characteristic.LockPhysicalControls)
+            .on('get', callback => { this.getValue('lockphysicalcontrols', callback) })
+            .on('set', (value, callback) => { })
+
         /* Return both the main service (this.service) and the informationService */
         return [informationService, this.service]
     }
@@ -240,15 +273,15 @@ class MHACWIFI1Accessory {
     }
 }
 
-MHACWIFI1Accessory.prototype.identify = function (callback) {
+    MHACWIFI1Accessory.prototype.identify = function (callback) {
     this.log(`Identify requested`)
     this.airco.identify()
     .then(result => {
-        this.log(`Identify succeeded`)
-        callback(null)
-    })
+    this.log(`Identify succeeded`)
+    callback(null)
+})
     .catch(error => {
-        this.log(`Identify failed`, error)
-        callback(error)
-    })
+    this.log(`Identify failed`, error)
+    callback(error)
+})
 }
