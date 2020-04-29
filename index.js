@@ -227,7 +227,7 @@ class MHACWIFI1Accessory {
 
         this.service.getCharacteristic(Characteristic.LockPhysicalControls)
             .on('get', callback => { this.getValue('lockphysicalcontrols', callback) })
-            .on('set', (value, callback) => { })
+            .on('set', (value, callback) => { this.setValue('lockphysicalcontrols', value, callback) })
 
         /* Return both the main service (this.service) and the informationService */
         return [informationService, this.service]
