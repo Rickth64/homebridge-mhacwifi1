@@ -32,153 +32,152 @@ module.exports = (homebridge) => {
     homebridge.registerAccessory('homebridge-mhacwifi1', 'MH-AC-WIFI-1', MHACWIFI1Accessory)
 }
 
-class MHACWIFI1Accessory {
-    constructor(log, config) {
+function MHACWIFI1Accessory(log, config) {
+    this.log = log
+    this.config = config
 
-        this.log = log
-        this.config = config
-
-        this.dataMap = {
-            "active": {
-                "uid": 1, /* on,off */
-                "mh": function (homekitActiveValue) {
-                    let mhActiveValue;
-                    switch (homekitActiveValue) {
-                        case Characteristic.Active.ACTIVE:
-                            mhActiveValue = 1;
-                            break;
-                        case Characteristic.Active.INACTIVE:
-                        default:
-                            mhActiveValue = 0;
-                            break;
-                    }
-                    return mhActiveValue;
-                },
-                "homekit": function (mhActiveValue) {
-                    let homekitActiveValue;
-                    switch (mhActiveValue) {
-                        case 1:
-                            homekitActiveValue = Characteristic.Active.ACTIVE;
-                            break;
-                        case 0:
-                        default:
-                            homekitActiveValue = Characteristic.Active.INACTIVE;
-                            break;
-                    }
-                    return homekitActiveValue;
+    this.dataMap = {
+        "active": {
+            "uid": 1, /* on,off */
+            "mh": function (homekitActiveValue) {
+                let mhActiveValue;
+                switch (homekitActiveValue) {
+                    case Characteristic.Active.ACTIVE:
+                        mhActiveValue = 1;
+                        break;
+                    case Characteristic.Active.INACTIVE:
+                    default:
+                        mhActiveValue = 0;
+                        break;
                 }
+                return mhActiveValue;
             },
-            "state": {
-                "uid": 2, /* user mode */
-                "mh": function (homekitStateValue) {
-                    let mhStateValue;
-                    switch (homekitStateValue) {
-                        case Characteristic.TargetHeaterCoolerState.HEAT:
-                            mhStateValue = 1;
-                            break;
-                        case Characteristic.TargetHeaterCoolerState.COOL:
-                            mhStateValue = 4;
-                            break;
-                        case Characteristic.TargetHeaterCoolerState.AUTO:
-                        default:
-                            mhStateValue = 0;
-                    }
-                    return mhStateValue;
-                },
-                "homekit": function (mhStateValue) {
-                    let homekitStateValue;
-                    switch (mhStateValue) {
-                        case 4: /* cool */
-                            homekitStateValue = Characteristic.TargetHeaterCoolerState.COOL;
-                            break;
-                        case 3: /* fan, no homekit mapping so go for AUTO */
-                            homekitStateValue = Characteristic.TargetHeaterCoolerState.AUTO;
-                            break;
-                        case 2: /* dry, no homekit mapping so go for AUTO */
-                            homekitStateValue = Characteristic.TargetHeaterCoolerState.AUTO;
-                            break;
-                        case 1: /* heat */
-                            homekitStateValue = Characteristic.TargetHeaterCoolerState.HEAT;
-                            break;
-                        case 0: /* auto */
-                        default:
-                            homekitStateValue = Characteristic.TargetHeaterCoolerState.AUTO;
-                            break;
-                    }
-                    return homekitStateValue;
+            "homekit": function (mhActiveValue) {
+                let homekitActiveValue;
+                switch (mhActiveValue) {
+                    case 1:
+                        homekitActiveValue = Characteristic.Active.ACTIVE;
+                        break;
+                    case 0:
+                    default:
+                        homekitActiveValue = Characteristic.Active.INACTIVE;
+                        break;
                 }
-            },
-            "rotationspeed": {
-                "uid": 4, /* fan speed, values are 0, 1, 2, 3, 4 for both platforms */
-                "mh": function (homekitRotationSpeedValue) {
-                    return homekitRotationSpeedValue;
-                },
-                "homekit": function (mhRotationSpeedValue) {
-                    return mhRotationSpeedValue;
-                }
-            },
-            "thresholdtemperature": {
-                "uid": 9, /* user setpoint */
-                "mh": this.hkTempToMhTemp,
-                "homekit": this.mhTempToHkTemp
-            },
-            "temperature": {
-                "uid": 10, /* return path temperature */
-                "mh": this.hkTempToMhTemp,
-                "homekit": this.mhTempToHkTemp
-            },
-            "lockphysicalcontrols": {
-                "uid": 12, /* remote disable */
-                "mh": function (homekitLockValue) {
-                    let mhLockValue;
-                    switch (homekitLockValue) {
-                        case Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED:
-                            mhLockValue = 1;
-                            break;
-                        case Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED:
-                        default:
-                            mhLockValue = 0;
-                            break;
-                    }
-                    return mhLockValue;
-                },
-                "homekit": function (mhLockValue) {
-                    let homekitLockValue;
-                    switch (mhLockValue) {
-                        case 1:
-                            homekitLockValue = Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED;
-                            break;
-                        case 0:
-                        default:
-                            homekitLockValue = Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED;
-                            break;
-                    }
-                    return homekitLockValue;
-                }
-            },
-            "mintemp": {
-                "uid": 35, /* min temperature setpoint */
-                "mh": this.hkTempToMhTemp,
-                "homekit": this.mhTempToHkTemp
-            },
-            "maxtemp": {
-                "uid": 36, /* max temperature setpoint */
-                "mh": this.hkTempToMhTemp,
-                "homekit": this.mhTempToHkTemp
-            },
-            "outdoortemperature": {
-                "uid": 37, /* outdoor temperature */
-                "mh": this.hkTempToMhTemp,
-                "homekit": this.mhTempToHkTemp
+                return homekitActiveValue;
             }
+        },
+        "state": {
+            "uid": 2, /* user mode */
+            "mh": function (homekitStateValue) {
+                let mhStateValue;
+                switch (homekitStateValue) {
+                    case Characteristic.TargetHeaterCoolerState.HEAT:
+                        mhStateValue = 1;
+                        break;
+                    case Characteristic.TargetHeaterCoolerState.COOL:
+                        mhStateValue = 4;
+                        break;
+                    case Characteristic.TargetHeaterCoolerState.AUTO:
+                    default:
+                        mhStateValue = 0;
+                }
+                return mhStateValue;
+            },
+            "homekit": function (mhStateValue) {
+                let homekitStateValue;
+                switch (mhStateValue) {
+                    case 4: /* cool */
+                        homekitStateValue = Characteristic.TargetHeaterCoolerState.COOL;
+                        break;
+                    case 3: /* fan, no homekit mapping so go for AUTO */
+                        homekitStateValue = Characteristic.TargetHeaterCoolerState.AUTO;
+                        break;
+                    case 2: /* dry, no homekit mapping so go for AUTO */
+                        homekitStateValue = Characteristic.TargetHeaterCoolerState.AUTO;
+                        break;
+                    case 1: /* heat */
+                        homekitStateValue = Characteristic.TargetHeaterCoolerState.HEAT;
+                        break;
+                    case 0: /* auto */
+                    default:
+                        homekitStateValue = Characteristic.TargetHeaterCoolerState.AUTO;
+                        break;
+                }
+                return homekitStateValue;
+            }
+        },
+        "rotationspeed": {
+            "uid": 4, /* fan speed, values are 0, 1, 2, 3, 4 for both platforms */
+            "mh": function (homekitRotationSpeedValue) {
+                return homekitRotationSpeedValue;
+            },
+            "homekit": function (mhRotationSpeedValue) {
+                return mhRotationSpeedValue;
+            }
+        },
+        "thresholdtemperature": {
+            "uid": 9, /* user setpoint */
+            "mh": this.hkTempToMhTemp,
+            "homekit": this.mhTempToHkTemp
+        },
+        "temperature": {
+            "uid": 10, /* return path temperature */
+            "mh": this.hkTempToMhTemp,
+            "homekit": this.mhTempToHkTemp
+        },
+        "lockphysicalcontrols": {
+            "uid": 12, /* remote disable */
+            "mh": function (homekitLockValue) {
+                let mhLockValue;
+                switch (homekitLockValue) {
+                    case Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED:
+                        mhLockValue = 1;
+                        break;
+                    case Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED:
+                    default:
+                        mhLockValue = 0;
+                        break;
+                }
+                return mhLockValue;
+            },
+            "homekit": function (mhLockValue) {
+                let homekitLockValue;
+                switch (mhLockValue) {
+                    case 1:
+                        homekitLockValue = Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED;
+                        break;
+                    case 0:
+                    default:
+                        homekitLockValue = Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED;
+                        break;
+                }
+                return homekitLockValue;
+            }
+        },
+        "mintemp": {
+            "uid": 35, /* min temperature setpoint */
+            "mh": this.hkTempToMhTemp,
+            "homekit": this.mhTempToHkTemp
+        },
+        "maxtemp": {
+            "uid": 36, /* max temperature setpoint */
+            "mh": this.hkTempToMhTemp,
+            "homekit": this.mhTempToHkTemp
+        },
+        "outdoortemperature": {
+            "uid": 37, /* outdoor temperature */
+            "mh": this.hkTempToMhTemp,
+            "homekit": this.mhTempToHkTemp
         }
-
-        this.airco = new acwm(config.ip, config.username, config.password)
-
-        this.service = new Service.HeaterCooler(this.config.name)
     }
 
-    getServices() {
+    this.airco = new acwm(config.ip, config.username, config.password)
+
+    this.service = new Service.HeaterCooler(this.config.name)
+}
+
+MHACWIFI1Accessory.prototype = {
+    getServices: function () {
         /*
          * The getServices function is called by Homebridge and should return an array of Services this accessory is exposing.
          * It is also where we bootstrap the plugin to tell Homebridge which function to use for which action.
@@ -231,13 +230,13 @@ class MHACWIFI1Accessory {
 
         /* Return both the main service (this.service) and the informationService */
         return [informationService, this.service]
-    }
+    },
 
     /*
     * Helpers
     **/
 
-    getValue(datapoint, callback) {
+    getValue: function (datapoint, callback) {
         this.airco.getDataPointValue(this.dataMap[datapoint].uid)
             .then(info => {
                 let value = this.dataMap[datapoint].homekit(info.value)
@@ -248,9 +247,9 @@ class MHACWIFI1Accessory {
                 this.log(`Error occured while getting value for ${datapoint}`, error)
                 callback(error)
             })
-    }
+    },
 
-    setValue(datapoint, value, callback) {
+    setValue: function (datapoint, value, callback) {
         this.airco.setDataPointValue(this.dataMap[datapoint].uid, this.dataMap[datapoint].mh(value))
             .then(info => {
                 this.log(`Successfully set value for ${datapoint}`, value)
@@ -260,28 +259,28 @@ class MHACWIFI1Accessory {
                 this.log(`Error occured while setting value for ${datapoint} to ${value}`, error)
                 callback(error)
             })
-    }
+    },
 
-    mhTempToHkTemp(mhTemp) {
+    mhTempToHkTemp: function (mhTemp) {
         let homekitTemperatureValue = parseInt(mhTemp) / 10;
         return homekitTemperatureValue;
-    }
+    },
 
-    hkTempToMhTemp(hkTemp) {
+    hkTempToMhTemp: function (hkTemp) {
         let mhTemperatureValue = hkTemp * 10;
         return mhTemperatureValue;
-    }
-}
+    },
 
-    MHACWIFI1Accessory.prototype.identify = function (callback) {
-    this.log(`Identify requested`)
-    this.airco.identify()
-    .then(result => {
-    this.log(`Identify succeeded`)
-    callback(null)
-})
-    .catch(error => {
-    this.log(`Identify failed`, error)
-    callback(error)
-})
+    identify: function (callback) {
+        this.log(`Identify requested`)
+        this.airco.identify()
+            .then(result => {
+                this.log(`Identify succeeded`)
+                callback(null)
+            })
+            .catch(error => {
+                this.log(`Identify failed`, error)
+                callback(error)
+            })
+    }
 }
