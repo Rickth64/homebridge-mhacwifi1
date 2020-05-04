@@ -187,7 +187,8 @@ MHACWIFI1Accessory.prototype = {
         /* Create a new information service. This just tells HomeKit about our accessory. */
         this.informationService
             .setCharacteristic(Characteristic.Manufacturer, 'Mitsubish Heavy Industries')
-            .setCharacteristic(Characteristic.Model, 'MH-AC-WIFI-1')
+            .setCharacteristic(Characteristic.Model, 'dummy-model')
+            .setCharacteristic(Characteristic.SerialNumber, 'dummy-sn')
 
         /*
          * For each of the service characteristics we need to register setters and getter functions
@@ -278,6 +279,7 @@ MHACWIFI1Accessory.prototype = {
         this.airco.getInfo()
         .then(info => {
             this.log(`Info retrieved:`, info)
+            this.informationService.setCharacteristic(Characteristic.Model(info.deviceModel))
         })
         .catch(error => {
             this.log(`Unable to retrieve device info`, error)
