@@ -174,6 +174,7 @@ function MHACWIFI1Accessory(log, config) {
     this.airco = new acwm(config.ip, config.username, config.password)
 
     this.service = new Service.HeaterCooler(this.config.name)
+    this.informationService = new Service.AccessoryInformation()
 }
 
 MHACWIFI1Accessory.prototype = {
@@ -184,10 +185,9 @@ MHACWIFI1Accessory.prototype = {
          */
 
         /* Create a new information service. This just tells HomeKit about our accessory. */
-        const informationService = new Service.AccessoryInformation()
+        this.informationService
             .setCharacteristic(Characteristic.Manufacturer, 'Mitsubish Heavy Industries')
-            .setCharacteristic(Characteristic.Model, 'Some model')
-            .setCharacteristic(Characteristic.SerialNumber, '123-456-789')
+            .setCharacteristic(Characteristic.Model, 'MH-AC-WIFI-1')
 
         /*
          * For each of the service characteristics we need to register setters and getter functions
@@ -229,7 +229,7 @@ MHACWIFI1Accessory.prototype = {
             .on('set', (value, callback) => { this.setValue('lockphysicalcontrols', value, callback) })
 
         /* Return both the main service (this.service) and the informationService */
-        return [informationService, this.service]
+        return [this.informationService, this.service]
     },
 
     /*
@@ -269,6 +269,16 @@ MHACWIFI1Accessory.prototype = {
     hkTempToMhTemp: function (hkTemp) {
         let mhTemperatureValue = hkTemp * 10;
         return mhTemperatureValue;
+    },
+
+    getInfo: function () {
+        this.airco.getInfo()
+        .then(info => {
+            this.log(`Info retrieved:`, info)
+        })
+        .catch(error => {
+            this.log(`Unable to retrieve device info`, error)
+        })
     },
 
     identify: function (callback) {
