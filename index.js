@@ -279,7 +279,7 @@ MHACWIFI1Accessory.prototype = {
         this.airco.getInfo()
         .then(info => {
             this.log(`Info retrieved:`, info)
-            this.informationService.setCharacteristic(Characteristic.Model(info.deviceModel))
+            this.informationService.getCharacteristic(Characteristic.Model).updateValue(info.deviceModel)
         })
         .catch(error => {
             this.log(`Unable to retrieve device info`, error)
