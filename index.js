@@ -185,9 +185,9 @@ MHACWIFI1Accessory.prototype = {
 
         /* Create a new information service. This just tells HomeKit about our accessory. */
         const informationService = new Service.AccessoryInformation()
-            .setCharacteristic(Characteristic.Manufacturer, 'Mitsubish Heavy Industries')
-            .setCharacteristic(Characteristic.Model, 'Some model')
-            .setCharacteristic(Characteristic.SerialNumber, '123-456-789')
+            .setCharacteristic(Characteristic.Manufacturer, this.config.manufacturer || 'Mitsubishi Heavy Industries')
+            .setCharacteristic(Characteristic.Model, this.config.model || 'MH-AC-WIFI-1')
+            .setCharacteristic(Characteristic.SerialNumber, this.config.serialNumber || '123-456-789')
 
         /*
          * For each of the service characteristics we need to register setters and getter functions

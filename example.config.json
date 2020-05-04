@@ -5,7 +5,10 @@
             "name": "Aircon Living Room",
             "ip": "0.0.0.0",
             "username": "admin",
-            "password": "admin"
+            "password": "admin",
+            "manufacturer": "Mitsubishi Heavy Industries",
+            "model": "MH-AC-WIFI-1",
+            "serialNumber": "1234567890"
         }
     ]
 }
