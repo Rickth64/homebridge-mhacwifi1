@@ -228,6 +228,9 @@ MHACWIFI1Accessory.prototype = {
             .on('get', callback => { this.getValue('lockphysicalcontrols', callback) })
             .on('set', (value, callback) => { this.setValue('lockphysicalcontrols', value, callback) })
 
+        /* Trigger getInfo (for serial number etc.) */
+        this.getInfo()
+
         /* Return both the main service (this.service) and the informationService */
         return [this.informationService, this.service]
     },
