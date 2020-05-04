@@ -174,7 +174,6 @@ function MHACWIFI1Accessory(log, config) {
     this.airco = new acwm(config.ip, config.username, config.password)
 
     this.service = new Service.HeaterCooler(this.config.name)
-    this.informationService = new Service.AccessoryInformation()
 }
 
 MHACWIFI1Accessory.prototype = {
@@ -185,10 +184,10 @@ MHACWIFI1Accessory.prototype = {
          */
 
         /* Create a new information service. This just tells HomeKit about our accessory. */
-        this.informationService
+        const informationService = new Service.AccessoryInformation()
             .setCharacteristic(Characteristic.Manufacturer, 'Mitsubish Heavy Industries')
-            .setCharacteristic(Characteristic.Model, 'dummy-model')
-            .setCharacteristic(Characteristic.SerialNumber, 'dummy-sn')
+            .setCharacteristic(Characteristic.Model, 'Some model')
+            .setCharacteristic(Characteristic.SerialNumber, '123-456-789')
 
         /*
          * For each of the service characteristics we need to register setters and getter functions
@@ -229,11 +228,8 @@ MHACWIFI1Accessory.prototype = {
             .on('get', callback => { this.getValue('lockphysicalcontrols', callback) })
             .on('set', (value, callback) => { this.setValue('lockphysicalcontrols', value, callback) })
 
-        /* Trigger getInfo (for serial number etc.) */
-        this.getInfo()
-
         /* Return both the main service (this.service) and the informationService */
-        return [this.informationService, this.service]
+        return [informationService, this.service]
     },
 
     /*
@@ -273,17 +269,6 @@ MHACWIFI1Accessory.prototype = {
     hkTempToMhTemp: function (hkTemp) {
         let mhTemperatureValue = hkTemp * 10;
         return mhTemperatureValue;
-    },
-
-    getInfo: function () {
-        this.airco.getInfo()
-        .then(info => {
-            this.log(`Info retrieved:`, info)
-            this.informationService.getCharacteristic(Characteristic.Model).updateValue(info.deviceModel)
-        })
-        .catch(error => {
-            this.log(`Unable to retrieve device info`, error)
-        })
     },
 
     identify: function (callback) {
