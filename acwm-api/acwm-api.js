@@ -27,21 +27,24 @@ class IntesisACWM {
 
 
     // Enable a retry mechanism for the writeCommand operation, which can intermittently fail on ECONNRESET
-    wait = ms => new Promise(r => setTimeout(r, ms));
+    wait(ms) { return new Promise(r => setTimeout(r, ms)) };
 
-    retryWriteCommandOperation = (cmd, data, delay, times) => new Promise((resolve, reject) => {
-        return this.writeCommand(cmd, data)
-            .then(resolve)
-            .catch((reason) => {
-                if (times - 1 > 0) {
-                    return this.wait(delay)
-                        .then(this.retryWriteCommandOperation.bind(null, cmd, data, delay, times - 1))
-                        .then(resolve)
-                        .catch(reject);
-                }
-                return reject(reason);
-            });
-    });
+    retryWriteCommandOperation(cmd, data, delay, times) {
+        const thisObject = this;
+        return new Promise((resolve, reject) => {
+            return thisObject.writeCommand(cmd, data)
+                .then(resolve)
+                .catch((reason) => {
+                    if (times - 1 > 0) {
+                        return thisObject.wait(delay)
+                            .then(thisObject.retryWriteCommandOperation.bind(thisObject, cmd, data, delay, times - 1))
+                            .then(resolve)
+                            .catch(reject);
+                    }
+                    return reject(reason);
+                });
+        })
+    };
 
     // init: Get reference information
     // The file 'data.json' should be accessible on the web server wothout authentication
@@ -76,49 +79,49 @@ class IntesisACWM {
     // Expected only to be used internally
     writeCommand(cmd, data) {
         return new Promise((resolve, reject) => {
-            const payload = JSON.stringify({
-                command: cmd,
-                data: data
-            })
-            const options = {
-                hostname: this.ip,
-                path: '/api.cgi',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': payload.length
-                }
-            }
-            const req = http.request(options, (res) => {
-                res.on('data', async (d) => {
-                    let result = JSON.parse(d)
-                    result.code = res.statusCode
-                    //console.log(result)
-                    if (result.success) {
-                        resolve(result)
-                    } else { // auto login
-                        if (this.auto && cmd !== 'login' && result.error.code === 1) {
-                            try {
-                                await this.login()
-                                data.sessionID = this.session // update session ID
-                                resolve(this.writeCommand(cmd, data))
-                            } catch (error) {
-                                reject(error)
-                            }
-                        } else {
-                            reject(result)
-                        }
-                    }
+                const payload = JSON.stringify({
+                    command: cmd,
+                    data: data
                 })
-            })
+                const options = {
+                    hostname: this.ip,
+                    path: '/api.cgi',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': payload.length
+                    }
+                }
+                const req = http.request(options, (res) => {
+                    res.on('data', async (d) => {
+                        let result = JSON.parse(d)
+                        result.code = res.statusCode
+                        //console.log(result)
+                        if (result.success) {
+                            resolve(result)
+                        } else { // auto login
+                            if (this.auto && cmd !== 'login' && result.error.code === 1) {
+                                try {
+                                    await this.login()
+                                    data.sessionID = this.session // update session ID
+                                    resolve(this.writeCommand(cmd, data))
+                                } catch (error) {
+                                    reject(error)
+                                }
+                            } else {
+                                reject(result)
+                            }
+                        }
+                    })
+                })
 
-            req.on('error', (error) => {
-                reject(error)
-            })
+                req.on('error', (error) => {
+                    reject(error)
+                })
 
-            req.write(payload)
-            req.end()
-        }
+                req.write(payload)
+                req.end()
+            }
         )
     }
 
