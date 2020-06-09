@@ -37,7 +37,7 @@ class IntesisACWM {
                 .catch((reason) => {
                     if (times - 1 > 0) {
                         return thisObject.wait(delay)
-                            .then(thisObject.retryWriteCommandOperation.bind(null, cmd, data, delay, times - 1))
+                            .then(thisObject.retryWriteCommandOperation.bind(thisObject, cmd, data, delay, times - 1))
                             .then(resolve)
                             .catch(reject);
                     }
