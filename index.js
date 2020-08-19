@@ -66,7 +66,7 @@ function MHACWIFI1Accessory(log, config) {
                 return homekitActiveValue;
             }
         },
-        "state": {
+        "mode": {
             "uid": 2, /* user mode */
             "mh": function (homekitStateValue) {
                 let mhStateValue;
@@ -115,7 +115,7 @@ function MHACWIFI1Accessory(log, config) {
                 return mhRotationSpeedValue;
             }
         },
-        "thresholdtemperature": {
+        "setpoint": {
             "uid": 9, /* user setpoint */
             "mh": this.hkTempToMhTemp,
             "homekit": this.mhTempToHkTemp
@@ -200,11 +200,11 @@ MHACWIFI1Accessory.prototype = {
             .on('set', (value, callback) => { this.setValue('active', value, callback) })
 
         this.service.getCharacteristic(Characteristic.CurrentHeaterCoolerState)
-            .on('get', callback => { this.getValue('state', callback) })
+            .on('get', callback => { this.getCurrentState(callback) })
 
         this.service.getCharacteristic(Characteristic.TargetHeaterCoolerState)
-            .on('get', callback => { this.getValue('state', callback) })
-            .on('set', (value, callback) => { this.setValue('state', value, callback) })
+            .on('get', callback => { this.getValue('mode', callback) })
+            .on('set', (value, callback) => { this.setValue('mode', value, callback) })
 
         this.service.getCharacteristic(Characteristic.CurrentTemperature)
             .on('get', callback => { this.getValue('temperature', callback) })
@@ -216,13 +216,13 @@ MHACWIFI1Accessory.prototype = {
 
         this.service.getCharacteristic(Characteristic.CoolingThresholdTemperature)
             .setProps({ "maxValue": 30, "minValue": 18, "minStep": 1 }) // TODO: get from API
-            .on('get', callback => { this.getValue('thresholdtemperature', callback) })
-            .on('set', (value, callback) => { this.setValue('thresholdtemperature', value, callback) })
+            .on('get', callback => { this.getValue('setpoint', callback) })
+            .on('set', (value, callback) => { this.setValue('setpoint', value, callback) })
 
         this.service.getCharacteristic(Characteristic.HeatingThresholdTemperature)
             .setProps({ "maxValue": 30, "minValue": 18, "minStep": 1 }) // TODO: get from API
-            .on('get', callback => { this.getValue('thresholdtemperature', callback) })
-            .on('set', (value, callback) => { this.setValue('thresholdtemperature', value, callback) })
+            .on('get', callback => { this.getValue('setpoint', callback) })
+            .on('set', (value, callback) => { this.setValue('setpoint', value, callback) })
 
         this.service.getCharacteristic(Characteristic.LockPhysicalControls)
             .on('get', callback => { this.getValue('lockphysicalcontrols', callback) })
@@ -259,6 +259,62 @@ MHACWIFI1Accessory.prototype = {
                 this.log(`Error occured while setting value for ${datapoint} to ${value}`, error)
                 callback(error)
             })
+    },
+
+    //Special case. There is only one setpoint temp, need to determine current state in AUTO mode
+    getCurrentState: function(callback) {
+        //Get current mode
+        this.airco.getDataPointValue(this.dataMap["mode"].uid)
+            .then(info => {
+                //Got the mode. If it is AUTO try to determine if currently heating or cooling
+                switch (info.value) {
+                    case 4: /* cool */
+                        callback(null, Characteristic.CurrentHeaterCoolerState.COOLING);
+                        break;
+                    case 3: /* fan, no homekit mapping so go for IDLE */
+                        callback(null, Characteristic.CurrentHeaterCoolerState.IDLE);
+                        break;
+                    case 2: /* dry, no homekit mapping so go for IDLE */
+                        callback(null, Characteristic.CurrentHeaterCoolerState.IDLE);
+                        break;
+                    case 1: /* heat */
+                        callback(null, Characteristic.CurrentHeaterCoolerState.HEATING);
+                        break;
+                    case 0: /* auto */
+                    default:
+                        //Get current temp and setpoint
+                        this.airco.getDataPointValue(this.dataMap["temperature"].uid)
+                            .then(currentTemp => {
+                                this.airco.getDataPointValue(this.dataMap["setpoint"].uid)
+                                    .then(setpoint => {
+                                        if (currentTemp < setpoint) {
+                                            //probably heating
+                                            callback(null, Characteristic.CurrentHeaterCoolerState.HEATING);
+                                        }else if (currentTemp > setpoint) {
+                                            //probably cooling
+                                            callback(null, Characteristic.CurrentHeaterCoolerState.COOLING);
+                                        }else{
+                                            //maybe idle
+                                            callback(null, Characteristic.CurrentHeaterCoolerState.IDLE);
+                                        }
+                                    })
+                                    .catch(error => {
+                                        this.log(`Error occured while getting value for setpoint`, error)
+                                        callback(error)
+                                    })
+                            })
+                            .catch(error => {
+                                this.log(`Error occured while getting value for temperature`, error)
+                                callback(error)
+                            })
+                        break;
+                }
+            })
+            .catch(error => {
+                this.log(`Error occured while getting value for mode`, error)
+                callback(error)
+            })
+
     },
 
     mhTempToHkTemp: function (mhTemp) {
