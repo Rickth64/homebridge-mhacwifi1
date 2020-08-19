@@ -290,10 +290,10 @@ MHACWIFI1Accessory.prototype = {
                                 this.airco.getDataPointValue(this.dataMap["setpoint"].uid)
                                     .then(setpoint => {
                                         this.log(`Successfully got setPoint: ${setpoint.value}`)
-                                        if (currentTemp < setpoint) {
+                                        if (currentTemp.value < setpoint.value) {
                                             this.log(`Probably HEATING`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.HEATING);
-                                        }else if (currentTemp > setpoint) {
+                                        }else if (currentTemp.value > setpoint.value) {
                                             this.log(`Probably COOLING`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.COOLING);
                                         }else{
