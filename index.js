@@ -267,6 +267,7 @@ MHACWIFI1Accessory.prototype = {
         this.airco.getDataPointValue(this.dataMap["mode"].uid)
             .then(info => {
                 //Got the mode. If it is AUTO try to determine if currently heating or cooling
+                this.log(`Successfully got mode: ${info.value}`)
                 switch (info.value) {
                     case 4: /* cool */
                         callback(null, Characteristic.CurrentHeaterCoolerState.COOLING);
@@ -285,16 +286,18 @@ MHACWIFI1Accessory.prototype = {
                         //Get current temp and setpoint
                         this.airco.getDataPointValue(this.dataMap["temperature"].uid)
                             .then(currentTemp => {
+                                this.log(`Successfully got currentTemp: ${currentTemp.value}`)
                                 this.airco.getDataPointValue(this.dataMap["setpoint"].uid)
                                     .then(setpoint => {
+                                        this.log(`Successfully got setPoint: ${setpoint.value}`)
                                         if (currentTemp < setpoint) {
-                                            //probably heating
+                                            this.log(`Probably HEATING`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.HEATING);
                                         }else if (currentTemp > setpoint) {
-                                            //probably cooling
+                                            this.log(`Probably COOLING`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.COOLING);
                                         }else{
-                                            //maybe idle
+                                            this.log(`Probably IDLE`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.IDLE);
                                         }
                                     })
