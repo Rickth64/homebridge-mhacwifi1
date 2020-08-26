@@ -216,12 +216,12 @@ MHACWIFI1Accessory.prototype = {
 
         this.service.getCharacteristic(Characteristic.CoolingThresholdTemperature)
             .setProps({ "maxValue": 30, "minValue": 18, "minStep": 1 }) // TODO: get from API
-            .on('get', callback => { this.getValue('setpoint', callback) })
+            .on('get', callback => { this.getSetpoint(callback) })
             .on('set', (value, callback) => { this.setValue('setpoint', value, callback) })
 
         this.service.getCharacteristic(Characteristic.HeatingThresholdTemperature)
             .setProps({ "maxValue": 30, "minValue": 18, "minStep": 1 }) // TODO: get from API
-            .on('get', callback => { this.getValue('setpoint', callback) })
+            .on('get', callback => { this.getSetpoint(callback) })
             .on('set', (value, callback) => { this.setValue('setpoint', value, callback) })
 
         this.service.getCharacteristic(Characteristic.LockPhysicalControls)
@@ -320,32 +320,56 @@ MHACWIFI1Accessory.prototype = {
 
     },
 
-    //Another special case, do not switch to AUTO if currently already AUTO, DRY or FAN.
+    //Another special case, do not switch to AUTO if currently DRY or FAN.
     //Otherwise DRY or FAN mode are aborted.
     setTargetState: function (value, callback) {
         //First get current mode
         this.airco.getDataPointValue(this.dataMap["mode"].uid)
             .then(info => {
-                //Got the mode. If it is AUTO do not do anything, return ok
+                //Got the mode.
                 this.log(`Successfully got mode: ${info.value}`)
                 switch (info.value) {
-                    case 0: /* auto */
-                    case 1: /* heat */
-                    case 4: /* cool */
-                        this.airco.setDataPointValue(this.dataMap["mode"].uid, this.dataMap["mode"].mh(value))
-                        .then(info => {
-                            this.log(`Successfully set value for mode`, value)
-                            callback(null)
-                        })
-                        .catch(error => {
-                            this.log(`Error occured while setting value for mode to ${value}`, error)
-                            callback(error)
-                        })
-                        break
-                    case 2: /* dry, no homekit mapping, ignore */
-                    case 3: /* fan, no homekit mapping, ignore */
+                    case 2: /* dry, no homekit mapping */
+                    case 3: /* fan, no homekit mapping */
+                        //Only switch to COOL or HEAT. Ignore AUTO.
+                        switch (value) {
+                            case Characteristic.TargetHeaterCoolerState.AUTO:
+                                this.log("FAN/DRY mode, ignore AUTO switch")
+                                break;
+                            default:
+                                this.setValue('mode', value, callback)
+                                break;
+         
+                        }
+                        break;
                     default:
-                        callback(null)
+                        this.setValue('mode', value, callback)
+                        break;
+                }
+            })
+            .catch(error => {
+                this.log(`Error occured while getting value for mode`, error)
+                callback(error)
+            })
+
+    },
+
+    //And another special case. Setpoint is 3276.8 in FAN mode. This confuses homekit.
+    //Use return path temperature in this case
+    getSetpoint: function(callback) {
+        //Get current mode
+        this.airco.getDataPointValue(this.dataMap["mode"].uid)
+            .then(info => {
+                //Got the mode. If it is FAN use return path temperature
+                this.log(`Successfully got mode: ${info.value}`)
+                switch (info.value) {
+                    case 3: /* fan, use return path temp */
+                        this.log('FAN mode, use temperature as setpoint')
+                        this.getValue('temperature', callback)
+                        break;
+                    default:
+                        //Get current setpoint
+                        this.getValue('setpoint', callback)
                         break;
                 }
             })
