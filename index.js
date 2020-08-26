@@ -335,6 +335,7 @@ MHACWIFI1Accessory.prototype = {
                         switch (value) {
                             case Characteristic.TargetHeaterCoolerState.AUTO:
                                 this.log("FAN/DRY mode, ignore AUTO switch")
+                                callback(null)
                                 break;
                             default:
                                 this.setValue('mode', value, callback)
