@@ -204,7 +204,7 @@ MHACWIFI1Accessory.prototype = {
 
         this.service.getCharacteristic(Characteristic.TargetHeaterCoolerState)
             .on('get', callback => { this.getValue('mode', callback) })
-            .on('set', (value, callback) => { this.setValue('mode', value, callback) })
+            .on('set', (value, callback) => { this.setTargetState(value, callback) })
 
         this.service.getCharacteristic(Characteristic.CurrentTemperature)
             .on('get', callback => { this.getValue('temperature', callback) })
@@ -310,6 +310,42 @@ MHACWIFI1Accessory.prototype = {
                                 this.log(`Error occured while getting value for temperature`, error)
                                 callback(error)
                             })
+                        break;
+                }
+            })
+            .catch(error => {
+                this.log(`Error occured while getting value for mode`, error)
+                callback(error)
+            })
+
+    },
+
+    //Another special case, do not switch to AUTO if currently already AUTO, DRY or FAN.
+    //Otherwise DRY or FAN mode are aborted.
+    setTargetState: function (value, callback) {
+        //First get current mode
+        this.airco.getDataPointValue(this.dataMap["mode"].uid)
+            .then(info => {
+                //Got the mode. If it is AUTO do not do anything, return ok
+                this.log(`Successfully got mode: ${info.value}`)
+                switch (info.value) {
+                    case 0: /* auto */
+                    case 1: /* heat */
+                    case 4: /* cool */
+                        this.airco.setDataPointValue(this.dataMap["mode"].uid, this.dataMap["mode"].mh(value))
+                        .then(info => {
+                            this.log(`Successfully set value for mode`, value)
+                            callback(null)
+                        })
+                        .catch(error => {
+                            this.log(`Error occured while setting value for mode to ${value}`, error)
+                            callback(error)
+                        })
+                        break
+                    case 2: /* dry, no homekit mapping, ignore */
+                    case 3: /* fan, no homekit mapping, ignore */
+                    default:
+                        callback(null)
                         break;
                 }
             })
