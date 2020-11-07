@@ -39,15 +39,17 @@ function MHACWIFI1Accessory(log, config) {
     this.dataMap = {
         "active": {
             "uid": 1, /* on,off */
-            "mh": function (homekitActiveValue) {
+            "mh": function (homekitActiveValue, asString = false) {
                 let mhActiveValue;
                 switch (homekitActiveValue) {
                     case Characteristic.Active.ACTIVE:
-                        mhActiveValue = 1;
+                        mhActiveValue = asString ? "on" : 1;
                         break;
                     case Characteristic.Active.INACTIVE:
+                        mhActiveValue = asString ? "off" : 0;
+                        break;
                     default:
-                        mhActiveValue = 0;
+                        mhActiveValue = asString ? "unknown (falling back to: off)" : 0;
                         break;
                 }
                 return mhActiveValue;
@@ -68,18 +70,18 @@ function MHACWIFI1Accessory(log, config) {
         },
         "mode": {
             "uid": 2, /* user mode */
-            "mh": function (homekitStateValue) {
+            "mh": function (homekitStateValue, asString = false) {
                 let mhStateValue;
                 switch (homekitStateValue) {
                     case Characteristic.TargetHeaterCoolerState.HEAT:
-                        mhStateValue = 1;
+                        mhStateValue = asString ? "heat" : 1;
                         break;
                     case Characteristic.TargetHeaterCoolerState.COOL:
-                        mhStateValue = 4;
+                        mhStateValue = asString ? "cool" : 4;
                         break;
                     case Characteristic.TargetHeaterCoolerState.AUTO:
                     default:
-                        mhStateValue = 0;
+                        mhStateValue = asString ? "auto" : 0;
                 }
                 return mhStateValue;
             },
@@ -108,11 +110,19 @@ function MHACWIFI1Accessory(log, config) {
         },
         "rotationspeed": {
             "uid": 4, /* fan speed, values are 0, 1, 2, 3, 4 for both platforms */
-            "mh": function (homekitRotationSpeedValue) {
-                return homekitRotationSpeedValue;
+            "mh": function (homekitRotationSpeedValue, asString = false) {
+                let mhRotationSpeedValue;
+                if (homekitRotationSpeedValue == 0) {
+                    mhRotationSpeedValue = homekitRotationSpeedValue;
+                }
+                else {
+                    mhRotationSpeedValue = asString ? `Speed ${homekitRotationSpeedValue}` : homekitRotationSpeedValue;
+                }
+                return mhRotationSpeedValue
             },
             "homekit": function (mhRotationSpeedValue) {
-                return mhRotationSpeedValue;
+                let homekitRotationSpeedValue = mhRotationSpeedValue;
+                return homekitRotationSpeedValue;
             }
         },
         "setpoint": {
@@ -127,15 +137,15 @@ function MHACWIFI1Accessory(log, config) {
         },
         "lockphysicalcontrols": {
             "uid": 12, /* remote disable */
-            "mh": function (homekitLockValue) {
+            "mh": function (homekitLockValue, asString = false) {
                 let mhLockValue;
                 switch (homekitLockValue) {
                     case Characteristic.LockPhysicalControls.CONTROL_LOCK_ENABLED:
-                        mhLockValue = 1;
+                        mhLockValue = asString ? "remote disabled" : 1;
                         break;
                     case Characteristic.LockPhysicalControls.CONTROL_LOCK_DISABLED:
                     default:
-                        mhLockValue = 0;
+                        mhLockValue = asString ? "remote enabled" : 0;
                         break;
                 }
                 return mhLockValue;
@@ -240,23 +250,24 @@ MHACWIFI1Accessory.prototype = {
         this.airco.getDataPointValue(this.dataMap[datapoint].uid)
             .then(info => {
                 let value = this.dataMap[datapoint].homekit(info.value)
-                this.log(`Successfully retrieved value for ${datapoint}`, value)
+                this.log.debug(`Successfully retrieved value for ${datapoint}:`, value)
                 callback(null, value)
             })
             .catch(error => {
-                this.log(`Error occured while getting value for ${datapoint}`, error)
+                this.log.error(`Error occured while getting value for ${datapoint}:`, error)
                 callback(error)
             })
     },
 
     setValue: function (datapoint, value, callback) {
+        this.log(`Setting '${datapoint}' to`, this.dataMap[datapoint].mh(value, true))
         this.airco.setDataPointValue(this.dataMap[datapoint].uid, this.dataMap[datapoint].mh(value))
             .then(info => {
-                this.log(`Successfully set value for ${datapoint}`, value)
+                this.log.debug(`Successfully set value for ${datapoint}:`, value)
                 callback(null)
             })
             .catch(error => {
-                this.log(`Error occured while setting value for ${datapoint} to ${value}`, error)
+                this.log.error(`Error occured while setting value for ${datapoint} to ${value}:`, error)
                 callback(error)
             })
     },
@@ -267,7 +278,7 @@ MHACWIFI1Accessory.prototype = {
         this.airco.getDataPointValue(this.dataMap["mode"].uid)
             .then(info => {
                 //Got the mode. If it is AUTO try to determine if currently heating or cooling
-                this.log(`Successfully got mode: ${info.value}`)
+                this.log.debug(`Successfully got mode: ${info.value}`)
                 switch (info.value) {
                     case 4: /* cool */
                         callback(null, Characteristic.CurrentHeaterCoolerState.COOLING);
@@ -286,35 +297,35 @@ MHACWIFI1Accessory.prototype = {
                         //Get current temp and setpoint
                         this.airco.getDataPointValue(this.dataMap["temperature"].uid)
                             .then(currentTemp => {
-                                this.log(`Successfully got currentTemp: ${currentTemp.value}`)
+                                this.log.debug(`Successfully got currentTemp: ${currentTemp.value}`)
                                 this.airco.getDataPointValue(this.dataMap["setpoint"].uid)
                                     .then(setpoint => {
-                                        this.log(`Successfully got setPoint: ${setpoint.value}`)
+                                        this.log.debug(`Successfully got setPoint: ${setpoint.value}`)
                                         if (currentTemp.value <= setpoint.value - 10) {
-                                            this.log(`Probably HEATING`)
+                                            this.log.debug(`Probably HEATING`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.HEATING);
                                         }else if (currentTemp.value >= setpoint.value + 10) {
-                                            this.log(`Probably COOLING`)
+                                            this.log.debug(`Probably COOLING`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.COOLING);
                                         }else{
-                                            this.log(`Probably IDLE`)
+                                            this.log.debug(`Probably IDLE`)
                                             callback(null, Characteristic.CurrentHeaterCoolerState.IDLE);
                                         }
                                     })
                                     .catch(error => {
-                                        this.log(`Error occured while getting value for setpoint`, error)
+                                        this.log.error(`Error occured while getting value for setpoint:`, error)
                                         callback(error)
                                     })
                             })
                             .catch(error => {
-                                this.log(`Error occured while getting value for temperature`, error)
+                                this.log.error(`Error occured while getting value for temperature:`, error)
                                 callback(error)
                             })
                         break;
                 }
             })
             .catch(error => {
-                this.log(`Error occured while getting value for mode`, error)
+                this.log.error(`Error occured while getting value for mode:`, error)
                 callback(error)
             })
 
@@ -327,14 +338,14 @@ MHACWIFI1Accessory.prototype = {
         this.airco.getDataPointValue(this.dataMap["mode"].uid)
             .then(info => {
                 //Got the mode.
-                this.log(`Successfully got mode: ${info.value}`)
+                this.log.debug(`Successfully got mode: ${info.value}`)
                 switch (info.value) {
                     case 2: /* dry, no homekit mapping */
                     case 3: /* fan, no homekit mapping */
                         //Only switch to COOL or HEAT. Ignore AUTO.
                         switch (value) {
                             case Characteristic.TargetHeaterCoolerState.AUTO:
-                                this.log("FAN/DRY mode, ignore AUTO switch")
+                                this.log.debug("FAN/DRY mode, ignore AUTO switch")
                                 callback(null)
                                 break;
                             default:
@@ -349,7 +360,7 @@ MHACWIFI1Accessory.prototype = {
                 }
             })
             .catch(error => {
-                this.log(`Error occured while getting value for mode`, error)
+                this.log.debug(`Error occured while getting value for mode:`, error)
                 callback(error)
             })
 
@@ -362,10 +373,10 @@ MHACWIFI1Accessory.prototype = {
         this.airco.getDataPointValue(this.dataMap["mode"].uid)
             .then(info => {
                 //Got the mode. If it is FAN use return path temperature
-                this.log(`Successfully got mode: ${info.value}`)
+                this.log.debug(`Successfully got mode: ${info.value}`)
                 switch (info.value) {
                     case 3: /* fan, use return path temp */
-                        this.log('FAN mode, use temperature as setpoint')
+                        this.log.debug('FAN mode, use temperature as setpoint')
                         this.getValue('temperature', callback)
                         break;
                     default:
@@ -375,7 +386,7 @@ MHACWIFI1Accessory.prototype = {
                 }
             })
             .catch(error => {
-                this.log(`Error occured while getting value for mode`, error)
+                this.log.debug(`Error occured while getting value for mode:`, error)
                 callback(error)
             })
 
@@ -386,20 +397,20 @@ MHACWIFI1Accessory.prototype = {
         return homekitTemperatureValue;
     },
 
-    hkTempToMhTemp: function (hkTemp) {
+    hkTempToMhTemp: function (hkTemp, asString = false) {
         let mhTemperatureValue = hkTemp * 10;
-        return mhTemperatureValue;
+        return asString ? `${hkTemp} degrees` : mhTemperatureValue;
     },
 
     identify: function (callback) {
-        this.log(`Identify requested`)
+        this.log.debug(`Identify requested`)
         this.airco.identify()
             .then(result => {
-                this.log(`Identify succeeded`)
+                this.log.debug(`Identify succeeded`)
                 callback(null)
             })
             .catch(error => {
-                this.log(`Identify failed`, error)
+                this.log.error(`Identify failed:`, error)
                 callback(error)
             })
     }
